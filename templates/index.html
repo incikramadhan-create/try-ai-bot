@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI Design Office v0.1</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><main>
+<header><div><small>VIRTUAL STUDIO / v0.1</small><h1>AI DESIGN OFFICE</h1></div><div class="phase"><span id="phase">IDLE</span><b id="progress">0%</b></div></header>
+<section class="brief"><textarea id="brief" placeholder="Give the office a project brief...">Redesign a 500 sqm retail showcase area. Increase stopping power and conversion while keeping the design technically realistic and commercially relevant.</textarea><button onclick="startProject()">START PROJECT</button></section>
+<div class="bar"><i id="bar"></i></div>
+<section class="office">
+{% for a in agents %}<article class="desk" id="desk-{{a.id}}"><div class="top"><span class="icon">{{a.icon}}</span><span class="status" id="status-{{a.id}}">IDLE</span></div><h2>{{a.name}}</h2><h3>{{a.role}}</h3><p id="task-{{a.id}}">Waiting for project</p><details><summary>Output</summary><div id="out-{{a.id}}" class="output">—</div></details></article>{% endfor %}
+</section>
+<section class="bottom"><div class="activity"><h2>OFFICE ACTIVITY</h2><div id="logs"></div></div><div class="principal"><h2>PRINCIPAL DESK</h2><p>You make the final design decision. The team can research, argue and recommend; it stops here before presentation.</p><button id="approve" onclick="approve()" disabled>APPROVE DIRECTION</button></div></section>
+</main><script>
+async function startProject(){await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brief:document.getElementById('brief').value})});}
+async function approve(){await fetch('/api/approve',{method:'POST'});}
+async function refresh(){let s=await (await fetch('/api/state')).json();document.getElementById('phase').textContent=s.phase;document.getElementById('progress').textContent=s.progress+'%';document.getElementById('bar').style.width=s.progress+'%';document.getElementById('approve').disabled=!s.approval_required;
+for(let [id,a] of Object.entries(s.agents)){let d=document.getElementById('desk-'+id);d.className='desk '+a.status.toLowerCase();document.getElementById('status-'+id).textContent=a.status;document.getElementById('task-'+id).textContent=a.task;document.getElementById('out-'+id).textContent=s.outputs[id]||'—';}
+document.getElementById('logs').innerHTML=[...s.logs].reverse().map(x=>`<p><time>${x.time}</time>${x.message}</p>`).join('');}
+setInterval(refresh,700);refresh();</script></body></html>
